@@ -1,0 +1,176 @@
+import time
+import random
+from math import *
+import operator
+import pandas as pd
+import numpy as np
+
+# import plotting libraries
+import matplotlib
+import matplotlib.pyplot as plt
+from pandas.plotting import scatter_matrix
+%matplotlib inline 
+
+import seaborn as sns
+sns.set(style="white", color_codes=True)
+sns.set(font_scale=1.5)
+
+# import the ML algorithm
+from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+#from pandas.core import datetools
+
+from statsmodels.tools.eval_measures import rmse
+
+# import libraries for model validation
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split
+
+# import libraries for metrics and reporting
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
+from sklearn import metrics
+
+# pre-processing
+from sklearn.preprocessing import StandardScaler
+
+loc ='/home/thomas/Downloads/Machine Learning/Machine_Learning_Projects/Projects/Projects for submission/California Housing Price Prediction/Dataset for the project/housing.csv'
+df_training_house = pd.read_csv(loc)
+df_training_house.head()
+df_training_house.shape
+df_training_house.columns
+
+# using the list to extract subset of original dataframe
+X = df_training_house.drop(['median_house_value'],axis=1).values
+
+# select a series from the dataframe
+y = df_training_house['median_house_value'].values
+
+# handle the missing values by finding the count of missing values
+df_training_house.isnull().sum()
+
+# filling the missing values with mean columnn values
+df_training_house.fillna(df_training_house.mean(), inplace = True)
+
+# Count the number of Non values in each column
+print(df_training_house.isnull().sum())
+
+# Encode the categorical data
+df_training_house.dtypes
+
+df_training_house['ocean_proximity'].value_counts()df_training_house['ocean_proximity'].value_counts()
+
+df_training_house['ocean_proximity'].replace({'<1H OCEAN': 0, 'INLAND':1, 'NEAR OCEAN':2, 'NEAR BAY':3, 'ISLAND':4}, inplace=True)
+
+# standardize training and test dataset
+# instantiate the scaler
+scaler = StandardScaler()
+
+X = df_training_house.drop(['median_house_value'],axis=1).values
+y = df_training_house['median_house_value'].values
+
+scaler.fit(X)
+
+rescaledX = scaler.transform(X)
+rescaledX
+
+# Split data into 80% training and 20% testing 
+# Splitting X and y into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(rescaledX, y, test_size=0.2, random_state=1)
+
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
+
+# Perform linear regression on the data
+linreg = LinearRegression()
+linreg.fit(X_train, y_train)
+
+# print the coefficients
+print(linreg.intercept_)
+print(linreg.coef_)
+
+feat_columns = df_training_house.drop(['median_house_value'],axis=1).columns
+list(zip(feat_columns, linreg.coef_))
+
+# Make Predictions
+y_pred = linreg.predict(X_test)
+
+# Print the root mean square error
+print('Root Mean Sq Error RMSE : ', np.sqrt(metrics.mean_squared_error(y_test,y_pred)))
+
+# Decision Tree Regression
+dt_reg = DecisionTreeRegressor(random_state=0)
+
+dt_reg.fit(X_train, y_train)
+mod_r2score = dt_reg.score(X_train, y_train)
+
+print('coefficient of determination R^2 of the prediction : ',mod_r2score)
+
+y_pred = dt_reg.predict(X_test)
+
+# printing rmse for decision tree regression
+print('Root Mean Sq Error RMSE : ', np.sqrt(metrics.mean_squared_error(y_test,y_pred)))
+
+# Random forest Regression 
+rf_reg = RandomForestRegressor(random_state=0)
+
+rf_reg.fit(X_train, y_train)
+
+mod_r2score = rf_reg.score(X_train, y_train)
+
+print('coefficient of determination R^2 of the prediction : ',mod_r2score)
+
+y_pred = rf_reg.predict(X_test)
+
+#printing rmse for random forest regression
+print('Root Mean Sq Error RMSE : ', np.sqrt(metrics.mean_squared_error(y_test,y_pred)))
+
+# Linear Regression with one independent Variable
+# extracting just the median income column
+X = df_training_house.drop(['median_income'],axis=1).values
+y = df_training_house['median_house_value'].values
+
+scaler.fit(X)
+
+rescaledX = scaler.transform(X)
+rescaledX
+
+X_train, X_test = train_test_split(rescaledX, test_size=0.2, random_state=1)
+
+print(X_train.shape)
+print(X_test.shape)
+
+#Extract median_income 
+dropcol = ["longitude","latitude","housing_median_age","total_rooms","total_bedrooms","population","households","ocean_proximity"]
+print(dropcol)
+housing_med =df_training_house.drop(dropcol,axis=1)
+print(type(housing_med))
+
+#check for rand_state
+X_train2,X_test2,y_train2,y_test2 = train_test_split(housing_med,y,test_size=0.2,random_state=42)
+
+print("X_train2 shape {} and size {}".format(X_train2.shape,X_train2.size))
+print("X_test2 shape {} and size {}".format(X_test2.shape,X_test2.size))
+print("y_train2 shape {} and size {}".format(y_train2.shape,y_train2.size))
+print("y_test2 shape {} and size {}".format(y_test2.shape,y_test2.size))
+
+linReg2 = LinearRegression()
+linReg2.fit(X_train2,y_train2)
+
+y_pred2 = linReg2.predict(X_test2)
+print(len(y_pred2))
+print(len(y_test2))
+print(y_pred2[0:5])
+print(y_test2[0:5])
+
+fig = plt.figure(figsize=(25,8))
+plt.scatter(y_test2,y_pred2,marker="o",edgecolors ="r",s=60)
+plt.scatter(y_train2,linReg2.predict(X_train2),marker="+",s=50,alpha=0.5)
+plt.xlabel(" Actual median_house_value")
+plt.ylabel(" Predicted median_house_value")
